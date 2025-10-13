@@ -7,6 +7,7 @@ import {
   removeTagFromMedia,
   removeTagFromPerson,
 } from "../services/tagActions";
+import { isWd14TagName } from "../utils/aiTags";
 
 export interface TagsProps {
   media?: Media;
@@ -17,6 +18,14 @@ export interface TagsProps {
 export function Tags({ media, person, onUpdate }: Readonly<TagsProps>) {
   const owner = media || person;
   if (!owner) {
+    return null;
+  }
+
+  const displayTags = (owner.tags ?? []).filter(
+    (tag) => !isWd14TagName(tag.name),
+  );
+
+  if (displayTags.length === 0) {
     return null;
   }
 
@@ -45,7 +54,7 @@ export function Tags({ media, person, onUpdate }: Readonly<TagsProps>) {
         Tags
       </Typography>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-        {(owner.tags ?? []).map((tag) => (
+        {displayTags.map((tag) => (
           <Chip
             key={tag.id}
             label={tag.name}

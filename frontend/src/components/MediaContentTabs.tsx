@@ -12,6 +12,8 @@ import TagIcon from "@mui/icons-material/Tag";
 import PeopleIcon from "@mui/icons-material/People";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import DataObjectIcon from "@mui/icons-material/DataObject";
+import PsychologyIcon from "@mui/icons-material/Psychology";
+import { Wd14Tags } from "./Wd14Tags";
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -50,12 +52,14 @@ export function MediaContentTabs(props: MediaContentTabsProps) {
       sx={{ minHeight: "64px" }} // Taller tabs for a better look
     />
   );
+  const hasPeopleTab = config.ENABLE_PEOPLE;
   const tabIndices = {
     similar: 0,
-    people: config.ENABLE_PEOPLE ? 1 : -1, // -1 if not rendered
-    tags: config.ENABLE_PEOPLE ? 2 : 1,
-    exif: config.ENABLE_PEOPLE ? 3 : 2,
-  };
+    people: hasPeopleTab ? 1 : -1, // -1 if not rendered
+    tags: hasPeopleTab ? 2 : 1,
+    aiTags: hasPeopleTab ? 3 : 2,
+    exif: hasPeopleTab ? 4 : 3,
+  } as const;
 
   return (
     <Box sx={{ width: "100%", mt: 4 }}>
@@ -72,6 +76,7 @@ export function MediaContentTabs(props: MediaContentTabsProps) {
             persons &&
             renderTab(`People (${persons.length})`, <PeopleIcon />)}
           {renderTab("Tags", <TagIcon />)}
+          {renderTab("AI Tags (WD14)", <PsychologyIcon />)}
           {renderTab("Exif Data", <DataObjectIcon />)}
         </Tabs>
       </Box>
@@ -98,6 +103,9 @@ export function MediaContentTabs(props: MediaContentTabsProps) {
               onTagAdded={onTagAdded}
               onUpdate={onTagUpdate}
             />
+          </TabPanel>
+          <TabPanel value={tabValue} index={tabIndices.aiTags}>
+            <Wd14Tags media={media} />
           </TabPanel>
 
           <TabPanel value={tabValue} index={tabIndices.exif}>
