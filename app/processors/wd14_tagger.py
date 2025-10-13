@@ -168,6 +168,9 @@ class WD14Tagger(MediaProcessor):
             session.add(media)
             return True
 
+        media.ran_auto_tagging = True
+        session.add(media)
+
         self._pending.append((media, tensor))
         self._flush_queue(session, force=len(self._pending) >= self._batch_size)
         return True
@@ -193,6 +196,9 @@ class WD14Tagger(MediaProcessor):
             outputs = self._ort_session.run(None, {self._ort_input: batch})
         except Exception:
             logger.exception("WD14Tagger: inference failed; clearing pending queue")
+            for media_obj in medias:
+                media_obj.ran_auto_tagging = False
+                session.add(media_obj)
             self._pending.clear()
             return
 
@@ -203,6 +209,9 @@ class WD14Tagger(MediaProcessor):
                 scores.shape[0],
                 len(medias),
             )
+            for media_obj in medias:
+                media_obj.ran_auto_tagging = False
+                session.add(media_obj)
             self._pending.clear()
             return
 
