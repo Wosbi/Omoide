@@ -8,7 +8,7 @@ from typing import Iterable
 
 import numpy as np
 from cv2.typing import MatLike
-from PIL import Image
+from PIL import Image, ImageOps
 from PIL.ImageFile import ImageFile
 from sqlmodel import Session, select
 
@@ -284,17 +284,40 @@ class WD14Tagger(MediaProcessor):
         if not scenes:
             return None
 
-        first = scenes[0]
-        if isinstance(first, ImageFile):
-            return first.convert("RGB")
-        if isinstance(first, tuple) and len(first) == 2:
-            frame = first[1]
-            try:
-                return Image.fromarray(frame).convert("RGB")
-            except Exception:
-                return None
-        if isinstance(first, Scene):
-            return None
+        for candidate in scenes:
+            if isinstance(candidate, ImageFile):
+                try:
+                    return candidate.convert("RGB")
+                except Exception:
+                    continue
+            if isinstance(candidate, Image.Image):
+                try:
+                    return candidate.convert("RGB")
+                except Exception:
+                    continue
+            if isinstance(candidate, tuple) and len(candidate) == 2:
+                frame = candidate[1]
+                try:
+                    return Image.fromarray(frame).convert("RGB")
+                except Exception:
+                    continue
+            if isinstance(candidate, Scene):
+                thumb_rel = candidate.thumbnail_path
+                if not thumb_rel:
+                    continue
+                thumb_path = settings.general.thumb_dir / thumb_rel
+                try:
+                    with Image.open(thumb_path) as thumb_img:
+                        return ImageOps.exif_transpose(thumb_img).convert("RGB")
+                except FileNotFoundError:
+                    logger.debug(
+                        "WD14Tagger: thumbnail missing for scene %s", thumb_path
+                    )
+                except Exception:
+                    logger.debug(
+                        "WD14Tagger: failed to load thumbnail %s", thumb_path
+                    )
+                continue
         return None
 
     def _prepare_tensor(self, image: Image.Image) -> np.ndarray | None:
