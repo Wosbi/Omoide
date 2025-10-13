@@ -240,7 +240,10 @@ class WD14Tagger(MediaProcessor):
         if self._max_tags:
             scored_tags = scored_tags[: self._max_tags]
 
-        formatted = [(f"wd14:{name}", score) for name, score, _ in scored_tags]
+        formatted = [
+            (f"wd14:{name}|{score:.2f}", score)
+            for name, score, _ in scored_tags
+        ]
         scores_only = [score for _, score in formatted]
 
         for tag_name, score in formatted:
