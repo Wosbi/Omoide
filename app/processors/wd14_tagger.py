@@ -241,12 +241,12 @@ class WD14Tagger(MediaProcessor):
             scored_tags = scored_tags[: self._max_tags]
 
         formatted = [
-            (f"wd14:{name}|{score:.2f}", score)
-            for name, score, _ in scored_tags
+            (f"wd14:{name}", score, category)
+            for name, score, category in scored_tags
         ]
-        scores_only = [score for _, score in formatted]
+        scores_only = [score for _, score, _ in formatted]
 
-        for tag_name, score in formatted:
+        for tag_name, score, _ in formatted:
             tag = get_or_create_tag(tag_name, session)
             attach_tag_to_media(media.id, tag.id, session, score=score)
 
