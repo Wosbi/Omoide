@@ -8,7 +8,7 @@ from typing import Iterable
 
 import numpy as np
 from cv2.typing import MatLike
-from PIL import Image
+from PIL import Image, ImageOps
 from PIL.ImageFile import ImageFile
 from sqlmodel import Session, select
 
@@ -299,7 +299,21 @@ class WD14Tagger(MediaProcessor):
             except Exception:
                 return None
         if isinstance(first, Scene):
-            return None
+            thumb_path = settings.general.thumb_dir / first.thumbnail_path
+            try:
+                image = Image.open(thumb_path)
+            except (FileNotFoundError, OSError):
+                logger.warning(
+                    "WD14Tagger: failed to open scene thumbnail at %s", thumb_path
+                )
+                return None
+            try:
+                return ImageOps.exif_transpose(image).convert("RGB")
+            except Exception:
+                logger.warning(
+                    "WD14Tagger: failed to prepare scene thumbnail at %s", thumb_path
+                )
+                return None
         return None
 
     def _prepare_tensor(self, image: Image.Image) -> np.ndarray | None:
