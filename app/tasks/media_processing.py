@@ -325,6 +325,13 @@ def run_media_processing(task_id: str) -> None:
                     break
 
             for proc in processors:
+                if getattr(proc, "active", False):
+                    try:
+                        proc.finalize(session)
+                    except Exception:
+                        logger.exception(
+                            "Processor '%s' finalize hook failed", proc.name
+                        )
                 try:
                     proc.unload()
                 except Exception:
