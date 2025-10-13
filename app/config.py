@@ -339,12 +339,35 @@ class GeneralSettings(BaseModel):
             self.media_dirs = [Path("/app/media")]
 
 
+class Wd14CategorySettings(BaseModel):
+    enabled: bool = True
+    threshold: float = Field(default=0.35)
+
+
+class Wd14TaggingSettings(BaseModel):
+    enabled: bool = False
+    model_path: str | None = None
+    labels_path: str | None = None
+    batch_size: int = 4
+    max_tags: int = 40
+    general: Wd14CategorySettings = Field(
+        default_factory=lambda: Wd14CategorySettings(threshold=0.35)
+    )
+    character: Wd14CategorySettings = Field(
+        default_factory=lambda: Wd14CategorySettings(threshold=0.5)
+    )
+    rating: Wd14CategorySettings = Field(
+        default_factory=lambda: Wd14CategorySettings(threshold=0.5)
+    )
+
+
 class TaggingSettings(BaseModel):
     auto_tagging: bool = True
     # whether to use the default system defined tags.
     use_default_tags: bool = True
     # add any tags in any language supported by the chosen clip model
     custom_tags: list[str] = []
+    wd14: Wd14TaggingSettings = Field(default_factory=Wd14TaggingSettings)
 
 
 class ScanSettings(BaseModel):

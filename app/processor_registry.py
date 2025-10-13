@@ -31,12 +31,14 @@ def load_processors() -> list[MediaProcessor]:
     from app.processors.embedding_extractor import EmbeddingExtractor
     from app.processors.faces import FaceProcessor
     from app.processors.auto_tagger import AutoTagger
+    from app.processors.wd14_tagger import WD14Tagger
 
     known_processor_classes: list[type[MediaProcessor]] = [
         ExifProcessor,
         EmbeddingExtractor,
         FaceProcessor,
         AutoTagger,
+        WD14Tagger,
     ]
 
     loaded = [cls() for cls in known_processor_classes]
