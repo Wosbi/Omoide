@@ -33,12 +33,18 @@ def _media_processing_conditions() -> list:
     active_processors = {
         proc.name for proc in processors if getattr(proc, "active", False)
     }
-    if active_processors & {"faces", "embedding_extractor", "auto_tagger"}:
+    if active_processors & {
+        "faces",
+        "embedding_extractor",
+        "auto_tagger",
+        "wd14_tagger",
+    }:
         conditions.append(Media.extracted_scenes.is_(False))
     flag_columns = {
         "faces": Media.faces_extracted,
         "auto_tagger": Media.ran_auto_tagging,
         "embedding_extractor": Media.embeddings_created,
+        "wd14_tagger": Media.ran_auto_tagging,
     }
     for name, column in flag_columns.items():
         if name in active_processors:
