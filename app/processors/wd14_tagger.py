@@ -43,6 +43,7 @@ class WD14Tagger(MediaProcessor):
         self._score_sum: float = 0.0
         self._score_count: int = 0
         self._min_dimension: int = 64
+        self._summary_logged: bool = False
 
     def load_model(self):
         cfg = getattr(settings.tagging, "wd14", None)
@@ -95,10 +96,12 @@ class WD14Tagger(MediaProcessor):
         self._category_thresholds = {
             "general": (cfg.general.enabled, float(cfg.general.threshold)),
             "character": (cfg.character.enabled, float(cfg.character.threshold)),
+            "copyright": (cfg.copyright.enabled, float(cfg.copyright.threshold)),
             "rating": (cfg.rating.enabled, float(cfg.rating.threshold)),
         }
         self._batch_size = max(1, int(cfg.batch_size or 1))
         self._max_tags = max(0, int(cfg.max_tags or 0))
+        self._summary_logged = False
         self.active = True
         logger.info(
             "WD14Tagger ready (model=%s, labels=%s, batch=%s, max_tags=%s)",
@@ -109,21 +112,7 @@ class WD14Tagger(MediaProcessor):
         )
 
     def unload(self):
-        if self._processed_items:
-            avg_tags = (
-                self._total_tags_assigned / self._processed_items
-                if self._processed_items
-                else 0.0
-            )
-            mean_score = (
-                self._score_sum / self._score_count if self._score_count else 0.0
-            )
-            logger.info(
-                "WD14Tagger summary: %s media, avg tags %.2f, mean score %.3f",
-                self._processed_items,
-                avg_tags,
-                mean_score,
-            )
+        self._log_summary()
         self._ort_session = None
         self._ort_input = None
         self._pending.clear()
@@ -135,6 +124,7 @@ class WD14Tagger(MediaProcessor):
         self._total_tags_assigned = 0
         self._score_sum = 0.0
         self._score_count = 0
+        self._summary_logged = False
 
     def process(
         self,
@@ -180,11 +170,16 @@ class WD14Tagger(MediaProcessor):
 
         self._pending.append((media, tensor))
         self._flush_queue(session, force=len(self._pending) >= self._batch_size)
-        # Always flush to avoid leaving items pending when batch < configured size
-        self._flush_queue(session, force=True)
         return True
 
     # ----- Internal helpers -------------------------------------------------
+
+    def finalize(self, session: Session) -> None:
+        if not self.active or not self._ort_session:
+            self._log_summary()
+            return
+        self._flush_queue(session, force=True)
+        self._log_summary()
 
     def _flush_queue(self, session: Session, force: bool) -> None:
         if not self._pending:
@@ -312,6 +307,7 @@ class WD14Tagger(MediaProcessor):
             return None
         arr = arr / 255.0
         arr = np.transpose(arr, (2, 0, 1))
+        arr = (arr - 0.5) / 0.5
         return arr[np.newaxis, ...]
 
     def _load_tag_definitions(self, path: Path) -> list[_TagDefinition]:
@@ -337,8 +333,8 @@ class WD14Tagger(MediaProcessor):
         mapping = {
             "0": "general",
             "1": "general",
-            "2": "general",
-            "3": "general",
+            "2": "copyright",
+            "3": "character",
             "4": "character",
             "5": "general",
             "6": "general",
@@ -347,9 +343,29 @@ class WD14Tagger(MediaProcessor):
             "9": "rating",
             "general": "general",
             "character": "character",
+            "copyright": "copyright",
             "rating": "rating",
         }
         return mapping.get(value, value or "general")
+
+    def _log_summary(self) -> None:
+        if self._summary_logged or not self._processed_items:
+            return
+        avg_tags = (
+            self._total_tags_assigned / self._processed_items
+            if self._processed_items
+            else 0.0
+        )
+        mean_score = (
+            self._score_sum / self._score_count if self._score_count else 0.0
+        )
+        logger.info(
+            "WD14Tagger summary: %s media, avg tags %.2f, mean score %.3f",
+            self._processed_items,
+            avg_tags,
+            mean_score,
+        )
+        self._summary_logged = True
 
     def _resolve_model_path(self, configured: str | None) -> Path | None:
         candidates: list[Path] = []

@@ -28,7 +28,7 @@ export function parseWd14TagName(tagName: string): Pick<Wd14Tag, "label" | "scor
     return null;
   }
 
-  const label = rawLabel.replace(/_/g, " ").trim();
+  const label = rawLabel.trim();
   return { label, score };
 }
 
