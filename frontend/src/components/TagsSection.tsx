@@ -4,6 +4,7 @@ import { Media, Person, Tag } from "../types";
 import config from "../config";
 import TagAdder from "./TagAdder";
 import { Tags } from "./Tags";
+import { isWd14TagName } from "../utils/aiTags";
 
 interface TagsSectionProps {
   media?: Media;
@@ -21,6 +22,7 @@ export function TagsSection({
   const owner = media || person;
   const ownerType = media ? "media" : "person";
   const tags = owner.tags ?? [];
+  const manualTags = tags.filter((tag) => !isWd14TagName(tag.name));
   const ownerId = owner.id;
   return (
     <Box mt={4}>
@@ -32,13 +34,13 @@ export function TagsSection({
           <TagAdder
             ownerType={ownerType}
             ownerId={ownerId}
-            existingTags={tags ?? []}
+            existingTags={manualTags}
             onTagAdded={onTagAdded}
           />
         </Box>
       )}
 
-      {tags && tags.length > 0 && (
+      {manualTags.length > 0 && (
         <Tags media={media} person={person} onUpdate={onUpdate} />
       )}
     </Box>
