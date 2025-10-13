@@ -33,6 +33,10 @@ class MediaProcessor(ABC):
         Should commit its own changes (e.g. write to its own tables).
         """
 
+    def finalize(self, session: Session) -> None:
+        """Optional hook invoked after all media have been processed."""
+        return
+
     def get_results(self, media_id: int, session: Session):
         """
         Return something JSON‑serializable about this media.

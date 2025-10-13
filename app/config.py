@@ -354,7 +354,10 @@ class Wd14TaggingSettings(BaseModel):
         default_factory=lambda: Wd14CategorySettings(threshold=0.35)
     )
     character: Wd14CategorySettings = Field(
-        default_factory=lambda: Wd14CategorySettings(threshold=0.5)
+        default_factory=lambda: Wd14CategorySettings(threshold=0.75)
+    )
+    copyright: Wd14CategorySettings = Field(
+        default_factory=lambda: Wd14CategorySettings(threshold=0.75)
     )
     rating: Wd14CategorySettings = Field(
         default_factory=lambda: Wd14CategorySettings(threshold=0.5)
